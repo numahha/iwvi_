@@ -7,5 +7,5 @@ register(
     id='CustomPendulum-v0',
     entry_point='custom_gym.envs:CustomPendulumEnv',
     #timestep_limit=200,
-    max_episode_steps=10000,
+    max_episode_steps=200,
 )
