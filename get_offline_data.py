@@ -11,7 +11,8 @@ def random_rollout(e):
     while True:
         a = e.action_space.sample()
         o_next, r, done, _ = env.step(a)
-        transition_data.append(np.hstack([o,a,o_next,r]))
+        #transition_data.append(np.hstack([o,a,o_next,r]))
+        transition_data.append(np.hstack([o,a,o_next-o,r]))
         o = o_next
         if done:
             break
