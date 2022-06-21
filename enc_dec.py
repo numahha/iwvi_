@@ -4,15 +4,21 @@ import torch
 class Encoder(torch.nn.Module):
     def __init__(self, s_dim, a_dim, z_dim, g_dim):
         super(Encoder, self).__init__()
+        h_dim=64
+        activate_fn=torch.nn.Tanh
         self.net_f = torch.nn.Sequential(
-                            torch.nn.Linear(2*s_dim+a_dim, 64),
-                            torch.nn.ReLU(),
-                            torch.nn.Linear(64, g_dim),
+                            torch.nn.Linear(2*s_dim+a_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, g_dim),
                             )
         self.net_q = torch.nn.Sequential(
-                            torch.nn.Linear(g_dim, 64),
-                            torch.nn.ReLU(),
-                            torch.nn.Linear(64, 2*z_dim),
+                            torch.nn.Linear(g_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, 2*z_dim),
                             )
 
     def forward(self, data_m):
@@ -24,10 +30,14 @@ class Encoder(torch.nn.Module):
 class Decoder(torch.nn.Module):
     def __init__(self, s_dim, a_dim, z_dim):
         super(Decoder, self).__init__()
+        h_dim=64
+        activate_fn=torch.nn.Tanh
         self.net_phat = torch.nn.Sequential(
-                            torch.nn.Linear(s_dim+a_dim+z_dim, 64),
-                            torch.nn.ReLU(),
-                            torch.nn.Linear(64, 2*s_dim),
+                            torch.nn.Linear(s_dim+a_dim+z_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, h_dim),
+                            activate_fn(),
+                            torch.nn.Linear(h_dim, 2*s_dim),
                             )
 
     def forward(self, saz):
