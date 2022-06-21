@@ -4,6 +4,7 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from os import path
+import math
 
 
 
@@ -19,9 +20,12 @@ class CustomPendulumEnv(gym.Env):
         self.dt=.05
         self.viewer = None
 
-        high = np.array([1., 1., self.max_speed])
-        self.action_space = spaces.Box(low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32)
-        self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
+        #high = np.array([1., 1., self.max_speed])
+        high = np.array([4.*np.pi, self.max_speed])
+        # self.action_space = spaces.Box(low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32)
+        # self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
+        self.action_space = spaces.Box(low=-self.max_torque, high=self.max_torque, shape=(1,))
+        self.observation_space = spaces.Box(low=-high, high=high)
 
         self.seed()
 
@@ -40,25 +44,37 @@ class CustomPendulumEnv(gym.Env):
 
         u = np.clip(u, -self.max_torque, self.max_torque)[0]
         self.last_u = u # for rendering
-        costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
+        #costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
+        rew = self.rew_fn(self._get_obs(), u)
 
         newthdot = thdot + (-3*g/(2*l) * np.sin(th + np.pi) + 3./(m*l**2)*( -c*thdot + u)) * dt
         newth = th + newthdot*dt
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
 
         self.state = np.array([newth, newthdot])
-        return self._get_obs(), -costs, False, {}
+        return self._get_obs(), rew, False, {}
+
+    def rew_fn(self,o,u):
+
+        #r = np.sqrt((o[0]**2)+(o[1]**2))
+        #th = math.atan2(o[1]/r, o[0]/r)
+        th = o[0]
+        thdot = o[1]
+        costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
+        return -np.array([costs]).reshape(1)[0]
+
 
     def reset(self):
         high = np.array([np.pi, 1])
         self.state = self.np_random.uniform(low=-high, high=high)
         self.last_u = None
-        self.c = 0.5*np.random.rand()
+        self.c = 0.5*np.random.rand() # coeff * [0,1)
         return self._get_obs()
 
     def _get_obs(self):
         theta, thetadot = self.state
-        return np.array([np.cos(theta), np.sin(theta), thetadot])
+        #return np.array([np.cos(theta), np.sin(theta), thetadot])
+        return np.array([theta, thetadot])
 
     def render(self, mode='human'):
 
