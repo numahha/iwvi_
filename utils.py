@@ -1,10 +1,10 @@
+import math
 import torch
 
 
 def gaussian_likelihood_loss(y, mu, logvar):
     # If Var is diagonal matrix whose element isvar_i, then log(det|Var|) = log(prod_i var_i) = sum_i log(var_i)
     return 0.5 * torch.mean(((y-mu)**2) * torch.exp(-logvar) + logvar)
-
 
 def kld(mu1, logvar1, mu2, logvar2):
     # kld(p1|p2) = E_{z~p1}[ log p1(z) - log p2(z) ]
@@ -30,13 +30,29 @@ def kdl_var_approx(mu1, logvar1, mu2_list, logvar2_list):
     return log_numerator_denominator
 
 
+# for sac
+def create_log_gaussian(mean, log_std, t):
+    quadratic = -((0.5 * (t - mean) / (log_std.exp())).pow(2))
+    l = mean.shape
+    log_z = log_std
+    z = l[-1] * math.log(2 * math.pi)
+    log_p = quadratic.sum(dim=-1) - log_z.sum(dim=-1) - 0.5 * z
+    return log_p
 
+def logsumexp(inputs, dim=None, keepdim=False):
+    if dim is None:
+        inputs = inputs.view(-1)
+        dim = 0
+    s, _ = torch.max(inputs, dim=dim, keepdim=True)
+    outputs = s + (inputs - s).exp().sum(dim=dim, keepdim=True).log()
+    if not keepdim:
+        outputs = outputs.squeeze(dim)
+    return outputs
 
-# def kdl_var_approx_for_gaussian_mixuture(weight1, mu1, logvar1, weight2, mu2, logvar2):
-#     # Eq (18) in Lower and upper bounds for approximation of the Kullback-Leibler divergence between Gaussian mixture models (2012)
-#
-#     ret = 0
-#
-#     numerator = 0.
-#     for m in range(len(weight1)):
-#         numerator += weight1[m] * torch.exp(-kld())
+def soft_update(target, source, tau):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
+
+def hard_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
