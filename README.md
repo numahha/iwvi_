@@ -1,8 +1,7 @@
 * 環境固定で同定できるかどうか？
 
 # TODO: two stage
-* 
-* varibad?実装
+* SAC実装
 * ペナルティ項実装
 
 # TODO: joint
